@@ -5,6 +5,7 @@ const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g,"-");
 document.title = GUIDE.name;
 $("#propName").textContent = GUIDE.name;
 $("#propAddr").textContent = "📍 " + GUIDE.address + " · Hosted by " + GUIDE.hosts;
+$("#wxLabel").textContent = "Weather in " + (GUIDE.address.split(",").slice(-2,-1)[0] || "").trim();
 $("#ciTime").textContent = GUIDE.checkIn;
 $("#coTime").textContent = GUIDE.checkOut;
 $("#wifiName").textContent = GUIDE.wifi.name;
@@ -90,9 +91,9 @@ renderPlaces("All");
 // Live weather (Open-Meteo, free, no key)
 (async () => {
   try {
-    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${GUIDE.lat}&longitude=${GUIDE.lng}&daily=temperature_2m_max,temperature_2m_min,weathercode&temperature_unit=fahrenheit&timezone=America%2FPhoenix&forecast_days=5`);
+    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${GUIDE.lat}&longitude=${GUIDE.lng}&daily=temperature_2m_max,temperature_2m_min,weathercode&temperature_unit=fahrenheit&timezone=auto&forecast_days=5`);
     const d = (await r.json()).daily;
     const icon = c => c===0?"☀️":c<=2?"🌤️":c===3?"☁️":c<=48?"🌫️":c<=67?"🌧️":c<=77?"🌨️":c<=82?"🌦️":"⛈️";
     $("#weather").innerHTML = d.time.map((t,i) => `<div><div>${new Date(t+"T12:00").toLocaleDateString("en-US",{weekday:"short"})}</div><div style="font-size:1.4rem">${icon(d.weathercode[i])}</div><div>${Math.round(d.temperature_2m_max[i])}° / ${Math.round(d.temperature_2m_min[i])}°</div></div>`).join("");
-  } catch { $("#weather").innerHTML = '<div style="text-align:left">Forecast unavailable offline. <a href="https://forecast.weather.gov/MapClick.php?lat=34.1404&lon=-109.9729" target="_blank" rel="noopener">Check weather.gov</a></div>'; }
+  } catch { $("#weather").innerHTML = '<div style="text-align:left">Forecast unavailable offline. <a href="https://forecast.weather.gov/MapClick.php?lat=' + GUIDE.lat + '&lon=' + GUIDE.lng + '" target="_blank" rel="noopener">Check weather.gov</a></div>'; }
 })();

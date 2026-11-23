@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Purple Prickly Pear</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0a0b0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/guide.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="top"><span>Guest Welcome Book</span><span><button id="printBtn" title="Save as PDF or print">🖨 Print</button></span></div>
+    <h1 id="propName"></h1>
+    <div class="addr" id="propAddr"></div>
+    <div class="moments" id="moments"></div>
+    <p class="tagline" id="tagline"></p>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- HOME -->
+  <section class="view on" id="view-home">
+    <div class="card">
+      <div class="grid2">
+        <div><div class="k">Check-in</div><div class="v" id="ciTime"></div></div>
+        <div><div class="k">Check-out</div><div class="v" id="coTime"></div></div>
+        <div><div class="k">WiFi network</div><div class="v" id="wifiName"></div></div>
+        <div><div class="k">WiFi password</div><div class="v" id="wifiPass"></div></div>
+      </div>
+      <div class="btnrow">
+        <a class="btn" id="dirBtn" target="_blank" rel="noopener">Get directions</a>
+        <a class="btn ghost" id="textBtn">Text your hosts</a>
+        <a class="btn ghost" id="callBtn">Call</a>
+      </div>
+    </div>
+    <div class="card">
+      <div class="k" id="wxLabel">Weather</div>
+      <div class="weather" id="weather"><div>Loading…</div></div>
+    </div>
+    <div class="card quick">
+      <div class="k" style="margin-bottom:4px">Useful right now</div>
+      <div id="quick"></div>
+    </div>
+  </section>
+
+  <!-- INFO -->
+  <section class="view" id="view-info">
+    <input type="search" id="search" placeholder="Search for anything… (wifi, grill, pets)">
+    <div id="info"></div>
+  </section>
+
+  <!-- MAP -->
+  <section class="view" id="view-map">
+    <div id="map"></div>
+    <div class="filters" id="filters"></div>
+    <ul class="places" id="places"></ul>
+  </section>
+</main>
+
+<nav class="tabs">
+  <button data-view="home" class="on">🏠 Home</button>
+  <button data-view="info">📖 Info</button>
+  <button data-view="map">📍 Local guide</button>
+</nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* =====================================================================
+   PROPERTY DATA — this block is the only part that changes per property.
+   ===================================================================== */
+const GUIDE = {
+  name: "Purple Prickly Pear",
+  address: "115 E Bruce Ave, Gilbert, Arizona 85234",
+  lat: 33.35175, lng: -111.7872,
+  hosts: "Alison & Jason",
+  checkIn: "4:00 PM", checkOut: "10:00 AM",
+  wifi: { name: "SantaRitaHouse", password: "SantaRita115" },
+  phone: "4807803512", phoneLabel: "(480) 780-3512",   // TEXT: monitored by Alison, Jason and our assistant
+  callPhone: "6024325367", callLabel: "(602) 432-5367", // CALL
+  email: "MyVacation@WanderOver.com",
+
+  moments: {"Pre-arrival": {"tagline": "Let's get you ready for Gilbert!", "topics": ["Welcome", "Add This Guide To Your Phone", "Driving Directions", "Things To Bring", "Overview of the Area", "Contacting Us"]}, "Check-in": {"tagline": "Welcome! Here's how to get settled.", "topics": ["Access Codes / Instructions", "Check-in Time", "Suggestions if you arrive early", "WiFi / Internet Details", "Heating & Cooling", "Quiet Times", "What to do in an Emergency"]}, "During your stay": {"tagline": "Make the most of your stay.", "topics": ["WiFi / Internet Details", "Plunge pool", "Television", "Grill / BBQ", "Emergency Phone Numbers"]}, "Check-out": {"tagline": "Everything for an easy check-out.", "topics": ["Check-out Time", "Check-out Process", "Thank You For Staying With Us"]}},
+
+  sections: [
+    { title: "👋 Welcome", topics: [
+      { t: "Welcome", d: `<p><strong>Welcome: Your Inside Track</strong></p><p>This is your time. And your time is precious. That's why we've created this guidebook. You'll find everything you need to know about staying with us, from check-in time to the WiFi code, great coffee to the best local restaurants. It's all here.</p><p><strong>Do I really need this info?</strong> Honest answer? 100% YES! Think of it like having us "virtually" by your side, showing you:</p><ul><li>How to find us 📍</li><li>The WiFi code 📶</li><li>Check-in instructions 🔑</li><li>Discovering wonderful local places 🎢</li><li>Excellent restaurants 🍽</li><li>How to find eternal happiness 🥰</li></ul><p>Well maybe not that last one, but hopefully you will leave us relaxed, content, and rejuvenated!</p><p>If you'd like a PDF of this guide, tap <strong>🖨 Print</strong> at the top and choose "Save as PDF".</p><p><strong>What next?</strong> Please relax, unwind, have fun, and enjoy your stay!</p>` }
+    ]},
+    { title: "🧳 Before You Leave Home", topics: [
+      { t: "Add This Guide To Your Phone", d: `<p>Add this guide to your home screen so it opens like an app 📲, no download or sign-in needed.</p><ul><li><strong>iPhone:</strong> open this link in Safari, tap the Share button, then "Add to Home Screen".</li><li><strong>Android:</strong> open in Chrome, tap the ⋮ menu, then "Add to Home screen".</li></ul><p><strong>Share your guide with your group.</strong> Send this link to everyone travelling with you so everyone has the info (less hassle for the trip organizer!).</p>` },
+      { t: "Driving Directions", d: `<p>Tap <strong>Get directions</strong> on the Home tab. It opens Google Maps with the house already filled in as your destination. 📍</p>` },
+      { t: "Things To Bring", d: `<p>Here's a basic list of what you might want to bring on your vacation. You'll no doubt have your own needs, but we thought this might be helpful, knowing what we do about the amenities in this home!</p><ul><li>Personal toiletries 🪥</li><li>Camera, memory cards, charger 📸</li><li>Personal electronics chargers 🔌</li><li>Flashlights, batteries 🔦🔋</li><li>Hiking gear 🥾</li><li>Sunscreen, and depending on the time of year, perhaps an umbrella ☂️</li></ul>` }
+    ]},
+    { title: "🔑 Arrival Information", topics: [
+      { t: "Access Codes / Instructions", d: `<p>We will provide you with an access key code 24 hours prior to arrival. This will allow you to check yourself in to the property. <strong>Please ensure you have the code before you travel. If not, please contact us.</strong> There's nothing worse than arriving somewhere new (potentially at night) and not being able to get in!</p><p><strong>Please note:</strong> <em>Your access code will only work with the carport door entrance. </em></p>` },
+      { t: "Check-in Time", d: `<p>Check-in time is 4️⃣PM. If you are arriving early, have a look at the Local guide tab. We've listed lots of things to do around the area - it's time for you to kick back and start relaxing!</p>` },
+      { t: "Contacting Us", d: `<p>If you booked on <a href="https://www.airbnb.com" target="_blank" rel="noopener">Airbnb</a> or <a href="https://www.vrbo.com" target="_blank" rel="noopener">VRBO</a>, we prefer all communication goes through their app. If you booked directly with us, please phone, text or email:</p><ul><li><a href="sms:4807803512">Text us at (480) 780-3512</a> 💬 (fastest: Alison, Jason and our assistant all see it)</li><li><a href="tel:6024325367">Call (602) 432-5367</a> ☎️</li><li><a href="mailto:MyVacation@WanderOver.com">Email MyVacation@WanderOver.com</a> 📧</li></ul>` },
+      { t: "Overview of the Area", d: `<p>You will be staying in Gilbert, nearly bordering Chandler &amp; Mesa, in the surrounding Phoenix area. </p><p>🕵🏽‍♂️🍸The White Rabbit Bar - 0.2 miles (1 minute drive / 5 minute walk) <em><strong>You WILL need a password to get in, </strong>let us know if you want it in advance<strong>. </strong></em></p><p>🍷 Postino WineCafe - 0.3 miles (2 minute drive / 8 minute walk)</p><p>🍺 O.H.S.O. Brewery PET FRIENDLY - 0.4 miles (3 minute drive / 9 minute walk)</p><p>🥪 Culinary Dropout - 0.5 miles (3 minute drive / 10 minute walk)</p><p>🍔 Zinburger - 0.6 miles (6 minute drive / 10 minute walk)</p><p>🥞 Snooze Eatery - 0.4 miles (4 minute drive / 9 minute walk)</p><p>🍕 Oregano's Pizza Bistro - 0.5 miles (3 minute drive / 9 minute walk)</p><p>🍖 Joe's Real BBQ - 0.3 miles (3 minute drive / 7 minute walk)</p><p>🌯 Topo - 0.5 miles (3 minute drive / 7 minute walk)</p><p>🌮 Bario Queen - 0.5 miles (5 minute drive / 10 minute walk)</p><p>🧇 Lo-Lo's Chicken &amp; Waffles - 0.4 miles (3 minute drive / 10 minute walk)</p><p>🥃 Dierks Bentley's Whiskey Row - 0.4 miles (3 minute drive / 8 minute walk)</p><p>🍺 The Porch - 0.4 miles (2 minute drive / 9 minute walk)</p><p>🌮 Joyride Taco House - 0.3 miles (2 minute drive / 8 minute walk)</p><p>🌮 So-Cal Tacos - 0.2 miles (1 minute drive / 6 minute walk)</p><p>🥗 Liberty Market - 0.3 miles (2 minute drive / 7 minute walk)</p><p>🍹 Copper 48 - 0.4 miles (3 minute drive / 10 minute walk)</p><p>🍕 Pomo Pizzeria - 0.6 miles (6 minute drive / 10 minute walk)</p><p>🎭 Hale Center Theatre - 0.5 miles (3 minute drive / 10 minute walk)</p><p>🏌🏼‍♂️ Top Golf - 4.7 miles (10 minute drive)</p><p>🎳 Main Event at San Tan Mall - 4.8 miles (11 minute drive)</p><p>🍨 Frost Gelato at San Tan Mall - 5.1 miles (12 minute drive)</p><p>🍸 GCM Liquor Store - .3 miles (3 minute drive / 6 minute walk)</p><p>🛒 Safeway Grocery Store - 1.8 miles (5 minute drive) </p><p>✈️ Phoenix-Mesa Gateway Airport - 9.8 miles (19 minute drive)</p><p>✈️ Phoenix Sky Harbor Airport - 18 miles (22 minute drive)</p>` },
+      { t: "Suggestions if you arrive early", d: `<p>Many guests will arrive before the designated check-in time of 4pm. The good news is that there is plenty to do. We often suggest that guests visit the grocery store (Safeway just 1.5 miles away) or visit downtown Gilbert just .2 miles away for nearly unlimited dining experiences, or head to the San Tan Mall area minutes away for tons of great shopping, more dining, or golf at Top Golf, Bowling or putt-putt golf at Main Event. That will give you more time to relax once you've checked in! </p>` }
+    ]},
+    { title: "🏡 About the Accommodation", topics: [
+      { t: "Heating & Cooling", d: `<p>You will find a panel on the living room wall that allows you to control the temperature of the home. If you're running the air conditioning, please ensure that all windows and outside doors are closed to ensure it operate to maximum efficiency. We recommend a setting of 72F / 22C which we find keeps the place at a comfortable temperature. IF you adjust up or down, <em>PLEASE</em> only adjust a max of 3 degrees at a time as to not damage the equipment. </p>` },
+      { t: "Kitchen equipment", d: `<p>The Dishwasher: It's very simple, we promise! We provide a supply of tablets - you will need to insert one into the flip box container on the inside of the dishwasher door. Then press the program button of your choice - there are a few settings which are obvious - then press the start button. <br/><br/>The Fridge/freezer: You should not need to adjust any settings. If you run into any difficulties (e.g. it's not cooling efficiently) please let us know. <br/><br/>The Oven/Range: No special instructions, the property does have a gas range, so PLEASE be sure to turn off completely and monitor children around the knobs and/or flames. </p>` },
+      { t: "Laundry appliances", d: `<p>We have a washer and separate dryer located in the utility room on the back patio if needed. There is a supply of detergent for your use. To operate the machines, simply select the program you want, place the detergent in the tray, close the door, and hit start. </p>` },
+      { t: "Infinity Board", d: `<p>We have included an Infinity Board for your use on the property. The Infinity Board has preloaded dozens of popular board games on it, like Clue, CandyLand, Scrabble, Connect Four, Life, Solitaire, and Guess Who. To turn it on, there is a small, round silver power button located on the side underneath the glass table to power on or off. </p>` },
+      { t: "Television", d: `<p>There is a television available in each bedrooms, as well as the living room. Each has a dedicated remote. Simply press power on the remote to turn on the TV. We do no have cable at this property, and instead rely on streaming services. If you'd like to watch popular streaming apps like Netflix or Hulu, simply navigate to the Netflix or Hulu apps and sign in to your personal accounts to stream your favorite shows and movies. <strong><em>Remember to sign out</em></strong> of your streaming services before you conclude your stay. </p>` },
+      { t: "Grill / BBQ", d: `<p>There is an outdoor grill available for your use. We ask that you do not operate near home and/or under the porch for safety. It's powered by propane gas and we do check before each guest arrives that it has sufficient gas for your stay. If it runs out please let us know. Please ensure you leave it clean to avoid any additional cleaning fees.</p>` },
+      { t: "Operation of outdoor mood lighting", d: `<p>There are string lights underneath the patio as well as at the plunge pool deck for fun mood lighting. Both are operated by infrared sensors, controlled by a remote hanging on the wall in the patio.</p><p><em>Please do not remove this remote. </em></p><p>#2 button will turn on/off the patio lights, #3 button will turn on/off the pool/deck lights. </p>` },
+      { t: "Plunge pool", d: `<p>There is a 10' plunge pool on site for lounging chest height in the warm summer months. Please be careful around water &amp; watch/monitor children and pets to ensure their safety. </p>` }
+    ]},
+    { title: "📋 Safety Info & Rules", topics: [
+      { t: "Quiet Times", d: `<p>We are located in a residential community and, although this is a vacation destination, it's home to many people. As such we ask that you respect their privacy and their right to a peaceful existence. Specifically, between the hours of 9pm and 7am noise should be kept to a minimum. 🤫</p>` },
+      { t: "Breakages", d: `<p>We understand that sometimes accidents happen! Should you break anything please let us know immediately - if it's minor we usually won't charge. If it's a larger issue (e.g. the TV screen) we would like to agree on the cost to replace with you before you leave to avoid any issues later. Thank you, we appreciate your cooperation. 🙏🏽</p>` },
+      { t: "Smoking Policy", d: `<p><strong>This is a smoke-free home</strong>, unless you are on the outside surrounding property and not near open windows. No smoking of any substance, including vaping, is permitted inside the home. 🚭</p>` },
+      { t: "Pets", d: `<p>We love animals. ❤️🐶</p><p>We chose to allow well-behaved woof woofs to our home, but we ask that you please control your furry friends while visiting. Any messes made, please clean up. 💩🗑 Pick up after your pet. Keep the animal kenneled please if you leave them alone. And please adhere to the same quiet rules as humans to allow other guests and full time residents in the area the opportunity for peace and quiet. </p>` },
+      { t: "What to do in an Emergency", d: `<p>For emergency services (ambulance, police, fire) please immediately call <strong>911</strong>. ☎️</p><p>Do not delay if you feel an emergency situation has arisen. State your location as the address at the top of this guide. <br/><br/><strong>In case of a fire 🔥</strong></p><ul><li>Exit the property as quickly as possible</li><li>Ensure that all persons are accounted for</li><li>Dial 911 and ask for ‘FIRE’ 👩🏼‍🚒</li><li>State your location (see the top of this guide)</li></ul><p>Do not attempt to re-enter the property until a Fire Officer states that it is safe to do so.</p>` },
+      { t: "Emergency Phone Numbers", d: `<p>For emergency services please immediately call <strong>911</strong>. Do not delay if you feel an emergency situation has arisen.</p><p>If another emergency that doesn't threaten human life occurs, but threatens property damage (like water pipes broken, locks broker, etc), please contact Alison and Jason through the VRBO or Airbnb app you booked through. </p><p>If we do not respond within minutes, please call our contractor and handyman Vince Romero at 480-358-8278, <strong><em><u>ONLY during absolute emergencies</u></em></strong> and <strong><em>only if</em><em> </em></strong>we do not respond to you quickly and you are concerned about property damage. </p>` }
+    ]},
+    { title: "📶 WiFi / Internet Details", topics: [
+      { t: "WiFi / Internet Details", d: `<p>There is free Wi-Fi for your use. The details are: <br/><br/>ID: <strong>SantaRitaHouse</strong></p><p>Password: <strong>SantaRita115</strong></p><p>The service is provided for your enjoyment but you are responsible for safe and appropriate use and complying with all laws. If there is any loss of service please contact us.</p>` }
+    ]},
+    { title: "👋 So Long, Farewell!", topics: [
+      { t: "Thank You For Staying With Us", d: `<p><strong>Thank you for staying with us, and we hope you enjoyed your stay. 😇</strong> If there were any issues with your stay, please don't hesitate to tell us, as we want to ensure we can resolve them for the next guest. <br/><br/><strong>We love online reviews!</strong> <br/><br/>VRBO and Airbnb auto sends you a review request. All you need to do is click the "leave a review" button, give us a star rating, and write a sentence or two about what you liked the best during your stay. <br/><br/>Was it the comfy bed? The information and recommendations? Or maybe it was Keurig machine in the kitchen? ⭐️⭐️⭐️⭐️⭐️<br/><br/>If you are unable to leave us 5 stars, please don't hesitate to contact us first to let us know why - you are key to helping our next guests to have a wonderful time. <br/><br/><strong>With sincere gratitude,</strong> <br/>❤️ Alison &amp; Jason </p>` },
+      { t: "Check-out Time", d: `<p>Check-out time is strictly 🔟AM. Should you require a later check-out we will do our best but you need to let us know beforehand. If we have guests arriving same day <em>(which is typical)</em> it will be almost impossible to offer a late check-out due to the cleaners needing to prepare for those guests. <em>We appreciate your understanding this in advance</em>. </p>` },
+      { t: "Check-out Process", d: `<p>Before your departure, we would appreciate if you would take care of the following:</p><ul><li>Leave the beds unmade. No need to strip them.</li><li>Place used towels in the shower.</li><li>Load the dishwasher and start it.</li><li>Empty all the trash and place in trash bin outside.</li><li>Move all furniture and items back to original locations.</li><li>Set thermostat to 75F / 24C.</li><li>Check all doors and windows to be sure that they are locked.</li></ul><p>We hope you had a wonderful stay and wish you safe travels back home!</p>` }
+    ]}
+  ],
+
+  // Local guide: [name, category, lat, lng, optional note]
+  places: [
+    ["Copper 48", "Bars", 33.35654, -111.79],
+    ["Dierks Bentley's Whiskey Row Gilbert", "Bars", 33.35582, -111.78932],
+    ["O.H.S.O. Brewery- Gilbert", "Bars", 33.35621, -111.78937],
+    ["The Porch", "Bars", 33.35561, -111.79],
+    ["The White Rabbit", "Bars", 33.35376, -111.78936, "You WILL need a password to get into the White Rabbit. Just message us and we'll get you this month's password to enter."],
+    ["12 West Brewing Co.", "Bars", 33.32176, -111.72675],
+    ["Fox Cigar Bar", "Bars", 33.30751, -111.75839],
+    ["Gypsy Cup", "Bars", 33.3563, -111.79061],
+    ["Sotol Modern Cocktail Kitchen", "Bars", 33.35561, -111.7894],
+    ["The Ostrich", "Bars", 33.30389, -111.8425],
+    ["The Parlour Room", "Bars", 33.35379, -111.78934],
+    ["The Rabbit Hole", "Bars", 33.35403, -111.78946, "You will need a reservation for this limited capacity speak-easy."],
+    ["Continental Gilbert Gun Club", "Activities", 33.31934, -111.73996],
+    ["Fox Cigar Bar", "Activities", 33.30751, -111.75839],
+    ["Gilbert Historical Museum", "Activities", 33.3494, -111.79011, "Gilbert grew up around a 1902 rail siding and was once known as the Hay Capital of the World. Don't miss the Gilbert Model Railroad Club's display in the museum basement (10 S. Gilbert Road)."],
+    ["Harkins Theatres SanTan Village 16", "Activities", 33.31113, -111.74058],
+    ["Main Event Gilbert", "Activities", 33.31837, -111.74067],
+    ["Phoenix Zoo", "Activities", 33.45185, -111.94895],
+    ["SanTan Village", "Activities", 33.31135, -111.74334],
+    ["Topgolf", "Activities", 33.32019, -111.74157],
+    ["Escapology Phoenix - SanTan", "Activities", 33.30949, -111.74358],
+    ["Freestone Park", "Activities", 33.35931, -111.76706],
+    ["Gilbert Farmers Market", "Activities", 33.35453, -111.79127],
+    ["Hale Centre Theatre", "Activities", 33.35522, -111.79061],
+    ["JP’s Comedy Club", "Activities", 33.33689, -111.77163],
+    ["Saguaro Lake Guest Ranch", "Activities", 33.56164, -111.53593],
+    ["Salt River Tubing", "Activities", 33.54476, -111.61157],
+    ["Starfighters Arcade", "Activities", 33.44941, -111.72585],
+    ["Albertsons", "Groceries", 33.33395, -111.77169],
+    ["Fry's Food And Drug", "Groceries", 33.33396, -111.80837],
+    ["Safeway", "Groceries", 33.34871, -111.7571],
+    ["Riparian Preserve at Water Ranch", "Parks", 33.36439, -111.73469],
+    ["San Tan Mountain Regional Park", "Parks", 33.16788, -111.63589],
+    ["Spook Hill", "Parks", 33.4806, -111.67625],
+    ["Superstition Mountains", "Parks", 33.4782, -111.23929],
+    ["Usery Mountain Regional Park", "Parks", 33.47918, -111.61947],
+    ["Barnone AZ - A Craftsman Community", "Restaurants", 33.32175, -111.72669],
+    ["Barrio Queen", "Restaurants", 33.3569, -111.78991],
+    ["Postino East", "Restaurants", 33.35515, -111.78999],
+    ["Culinary Dropout", "Restaurants", 33.35694, -111.78918],
+    ["Dierks Bentley's Whiskey Row Gilbert", "Restaurants", 33.35582, -111.78932],
+    ["Gypsy Cup", "Restaurants", 33.3563, -111.79061],
+    ["Joe's Real BBQ", "Restaurants", 33.35503, -111.78946],
+    ["Joyride Taco House East", "Restaurants", 33.35525, -111.78991],
+    ["Level 1 Arcade Bar", "Restaurants", 33.35686, -111.79097],
+    ["Liberty Market", "Restaurants", 33.3547, -111.78979],
+    ["Lo-Lo's Chicken & Waffles", "Restaurants", 33.35667, -111.79],
+    ["O.H.S.O. Brewery- Gilbert", "Restaurants", 33.35621, -111.78937, "DOG FRIENDLY! 🐶"],
+    ["Oregano's", "Restaurants", 33.35585, -111.78994],
+    ["Romeo's Euro Café", "Restaurants", 33.35384, -111.78932],
+    ["Snooze, an A.M. Eatery", "Restaurants", 33.35547, -111.78996],
+    ["SoCal Fish Taco Company", "Restaurants", 33.35439, -111.78944],
+    ["Sushi Brokers", "Restaurants", 33.35626, -111.79102],
+    ["The Bar (Gilbert)", "Restaurants", 33.35658, -111.78996],
+    ["The Farmhouse Restaurant", "Restaurants", 33.35459, -111.78993],
+    ["The Porch", "Restaurants", 33.35561, -111.79],
+    ["Topo Arizona", "Restaurants", 33.35521, -111.7895],
+    ["Udder Delights", "Restaurants", 33.33533, -111.75964],
+    ["Zinburger (Gilbert)", "Restaurants", 33.35621, -111.78996],
+    ["The Keg Steakhouse + Bar - Gilbert", "Restaurants", 33.30727, -111.74167]
+  ]
+};
+/* ======================== END OF PROPERTY DATA ======================== */
+</script>
+<script src="../assets/guide.js"></script>
+</body>
+</html>

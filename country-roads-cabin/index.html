@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Take Me Home Country Roads Cabin</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0a0b0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/guide.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="top"><span>Guest Welcome Book</span><span><button id="printBtn" title="Save as PDF or print">🖨 Print</button></span></div>
+    <h1 id="propName"></h1>
+    <div class="addr" id="propAddr"></div>
+    <div class="moments" id="moments"></div>
+    <p class="tagline" id="tagline"></p>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- HOME -->
+  <section class="view on" id="view-home">
+    <div class="card">
+      <div class="grid2">
+        <div><div class="k">Check-in</div><div class="v" id="ciTime"></div></div>
+        <div><div class="k">Check-out</div><div class="v" id="coTime"></div></div>
+        <div><div class="k">WiFi network</div><div class="v" id="wifiName"></div></div>
+        <div><div class="k">WiFi password</div><div class="v" id="wifiPass"></div></div>
+      </div>
+      <div class="btnrow">
+        <a class="btn" id="dirBtn" target="_blank" rel="noopener">Get directions</a>
+        <a class="btn ghost" id="textBtn">Text your hosts</a>
+        <a class="btn ghost" id="callBtn">Call</a>
+      </div>
+    </div>
+    <div class="card">
+      <div class="k" id="wxLabel">Weather</div>
+      <div class="weather" id="weather"><div>Loading…</div></div>
+    </div>
+    <div class="card quick">
+      <div class="k" style="margin-bottom:4px">Useful right now</div>
+      <div id="quick"></div>
+    </div>
+  </section>
+
+  <!-- INFO -->
+  <section class="view" id="view-info">
+    <input type="search" id="search" placeholder="Search for anything… (wifi, grill, pets)">
+    <div id="info"></div>
+  </section>
+
+  <!-- MAP -->
+  <section class="view" id="view-map">
+    <div id="map"></div>
+    <div class="filters" id="filters"></div>
+    <ul class="places" id="places"></ul>
+  </section>
+</main>
+
+<nav class="tabs">
+  <button data-view="home" class="on">🏠 Home</button>
+  <button data-view="info">📖 Info</button>
+  <button data-view="map">📍 Local guide</button>
+</nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* =====================================================================
+   PROPERTY DATA — this block is the only part that changes per property.
+   ===================================================================== */
+const GUIDE = {
+  name: "Take Me Home Country Roads Cabin",
+  address: "2552 Treehouse Lane, Sevierville, Tennessee 37876",
+  lat: 35.76609, lng: -83.4191,
+  hosts: "Alison & Jason",
+  checkIn: "4:00 PM", checkOut: "10:00 AM",
+  wifi: { name: "WanderOver.com", password: "MyVacation@" },
+  phone: "4807803512", phoneLabel: "(480) 780-3512",   // TEXT: monitored by Alison, Jason and our assistant
+  callPhone: "6024325367", callLabel: "(602) 432-5367", // CALL
+  email: "MyVacation@WanderOver.com",
+
+  moments: {"Pre-arrival": {"tagline": "Let's get you ready for Sevierville!", "topics": ["Welcome", "Add This Guide To Your Phone", "Driving Directions", "Things To Bring", "Overview of the Area", "Contacting Us"]}, "Check-in": {"tagline": "Welcome! Here's how to get settled.", "topics": ["Access Codes / Instructions", "Check-in Time", "Suggestions if you Arrive Early", "WiFi / Internet Details", "Heating & Cooling", "Quiet Times", "What to do in an Emergency"]}, "During your stay": {"tagline": "Make the most of your stay.", "topics": ["WiFi / Internet Details", "Hot Tub / Jacuzzi", "Fireplace", "Television", "Grill / BBQ", "Lions, Tigers, & Bears, OH MY!", "Emergency phone numbers"]}, "Check-out": {"tagline": "Everything for an easy check-out.", "topics": ["Check-out Time", "Check-out Process", "Thank You For Staying With Us"]}},
+
+  sections: [
+    { title: "👋 Welcome", topics: [
+      { t: "Welcome", d: `<p><strong>Welcome: Your Inside Track</strong></p><p>This is your time. And your time is precious. That's why we've created this guidebook. You'll find everything you need to know about staying with us, from check-in time to the WiFi code, great coffee to the best local restaurants. It's all here.</p><p><strong>Do I really need this info?</strong> Honest answer? 100% YES! Think of it like having us "virtually" by your side, showing you:</p><ul><li>How to find us 📍</li><li>The WiFi code 📶</li><li>Check-in instructions 🔑</li><li>Discovering wonderful local places 🎢</li><li>Excellent restaurants 🍽</li><li>How to find eternal happiness 🥰</li></ul><p>Well maybe not that last one, but hopefully you will leave us relaxed, content, and rejuvenated!</p><p>If you'd like a PDF of this guide, tap <strong>🖨 Print</strong> at the top and choose "Save as PDF".</p><p><strong>What next?</strong> Please relax, unwind, have fun, and enjoy your stay!</p>` }
+    ]},
+    { title: "🧳 Before You Leave Home", topics: [
+      { t: "Add This Guide To Your Phone", d: `<p>Add this guide to your home screen so it opens like an app 📲, no download or sign-in needed.</p><ul><li><strong>iPhone:</strong> open this link in Safari, tap the Share button, then "Add to Home Screen".</li><li><strong>Android:</strong> open in Chrome, tap the ⋮ menu, then "Add to Home screen".</li></ul><p><strong>Share your guide with your group.</strong> Send this link to everyone travelling with you so everyone has the info (less hassle for the trip organizer!).</p>` },
+      { t: "Driving Directions", d: `<p>Tap <strong>Get directions</strong> on the Home tab. It opens Google Maps with the house already filled in as your destination. 📍</p>` },
+      { t: "Things To Bring", d: `<p>Here's a basic list of what you might want to bring on your vacation. You'll no doubt have your own needs, but we thought this might be helpful, knowing what we do about the amenities in this home!</p><ul><li>Personal toiletries 🪥</li><li>Camera, memory cards, charger 📸</li><li>Personal electronics chargers 🔌</li><li>Flashlights, batteries 🔦🔋</li><li>Hiking gear 🥾</li><li>Sunscreen, and depending on the time of year, perhaps an umbrella ☂️</li></ul>` }
+    ]},
+    { title: "🔑 Arrival Information", topics: [
+      { t: "Access Codes / Instructions", d: `<p>We will provide you with an access key code 24 hours prior to arrival. This will allow you to check yourself in to the property. <strong>Please ensure you have the code before you travel. If not, please contact us.</strong> There's nothing worse than arriving somewhere new (potentially at night) and not being able to get in!</p><p>To operate the keyless lock, simply activate the keypad by pressing the HOME/CHECKMARK Icon on the lower left of the keypad. The keypad should now light up. Press your four digit password and press the HOME/CHECKMARK ☑️ button again to open. </p><p>To lock, simply press the LOCK 🔒icon/button. </p>` },
+      { t: "Check-in Time", d: `<p>Check-in time is 4️⃣PM. If you are arriving early, have a look at the Local guide tab. We've listed lots of things to do around the area - it's time for you to kick back and start relaxing!</p>` },
+      { t: "Contacting Us", d: `<p>If you booked on <a href="https://www.airbnb.com" target="_blank" rel="noopener">Airbnb</a> or <a href="https://www.vrbo.com" target="_blank" rel="noopener">VRBO</a>, we prefer all communication goes through their app. If you booked directly with us, please phone, text or email:</p><ul><li><a href="sms:4807803512">Text us at (480) 780-3512</a> 💬 (fastest: Alison, Jason and our assistant all see it)</li><li><a href="tel:6024325367">Call (602) 432-5367</a> ☎️</li><li><a href="mailto:MyVacation@WanderOver.com">Email MyVacation@WanderOver.com</a> 📧</li></ul>` },
+      { t: "Overview of the Area", d: `<p>You will be staying in Sevierville, bordering Gatlinburg &amp; Pigeon Forge, less than 20 minutes away. </p><p>✈️Knoxville airport is 45 mi away (71 minutes) </p><p>🍺 Bevmo is 1.5 miles away (6 minutes) </p><p>🍎Green's Grocery (a small local market) is located 4.1 mi away (13 minutes) </p><p>🛒Food City is 6.3 mi (16 minutes)</p><p>🐐Gatlinburg Mountain Coaster is 8.8 mi (22 minutes)</p><p>🎡The Island in Pigeon Forge is 14 mi (27 minutes) </p><p>🎢 Dollywood is 13 mi (26 minutes) </p><p>🐻Smoky Mountain Nat'l Park is 9.3 mi (28 minutes) </p><p>🌳Downtown Gatlinburg is 9 mi (27 minutes)</p>` },
+      { t: "Suggestions if you Arrive Early", d: `<p>Many guests will arrive before the designated check-in time. The good news is that there is plenty to do. We often suggest that guests visit the grocery store (Food City in Gatlinburg) or visit the countless small shops in Downtown Gatlinburg. That will give you more time to relax once you've checked in! There are also a few good restaurants for lunch so why not relax and enjoy some of the local food!</p>` }
+    ]},
+    { title: "🏡 About the Accommodation", topics: [
+      { t: "Kitchen Equipment", d: `<p>The Dishwasher: It's very simple, we promise! We provide a supply of tablets - you will need to insert one into the flip box container on the inside of the dishwasher door. Then press the program button of your choice - there are a few settings which are obvious - then press the start button. <br/><br/>The Fridge/freezer: You should not need to adjust any settings. If you run into any difficulties (e.g. it's not cooling efficiently) please let us know. <br/><br/>The Oven/Range: No special instructions, please know that all appliances operate with electricity.  </p>` },
+      { t: "Heating & Cooling", d: `<p>You will find a panel on the living room wall that allows you to control the temperature of the home. If you're running the air conditioning, please ensure that all windows and outside doors are closed to ensure it operate to maximum efficiency. We recommend a setting of 72F / 22C which we find keeps the place at a comfortable temperature. IF you adjust up or down, <em>PLEASE</em> only adjust a max of 3 degrees at a time as to not damage the equipment. </p>` },
+      { t: "Laundry Appliances", d: `<p>We have a washer and separate dryer stacked and located in kitchen. There is a supply of detergent for your use. To operate the machines, simply select the program you want, place the detergent in the tray, close the door, and hit start. </p>` },
+      { t: "Fireplace", d: `<p>Our home has a working gas fireplace. Please take extra care when using the fireplace. The fireplace is more for ambiance than heat, as we do have central heating in the property for your ultimate comfort. There is a timed dial on the wall to operate and turn on, and will automatically turn off after a maximum 60 minute cycle. </p>` },
+      { t: "Television", d: `<p>There is a television available in each bedroom, as well as the living room. Each has a dedicated remote. Simply press power on the remote to turn on the TV. If you'd like to watch popular streaming apps like Netflix or Hulu, simply locate on the screen, and enter your sign-in information. Remember to sign out of your streaming services before you conclude your stay. </p>` },
+      { t: "Hot Tub / Jacuzzi", d: `<p>We have an outdoor hot tub available for your use. We have our hot tub drained and sanitized by our cleaning staff between each guest stay for your safety, therefore please know that the hot tub <em>may be</em> cool upon your arrival as it does take a few hours to heat to the optimal temperature.  <br/><br/>Please also pay special attention to the safety rules which are located next to the hot tub posted on the wall. </p>` },
+      { t: "Grill / BBQ", d: `<p>There is an outdoor grill available for your use. It is a charcoal grill similar to ones found in National Parks around the country. We do not supply charcoal, if you intend to use please bring some on the way to the cabin. Please make efforts to leave it clean to avoid any additional cleaning fees.</p>` }
+    ]},
+    { title: "📋 Safety Info & Rules", topics: [
+      { t: "Quiet Times", d: `<p>We are located in a residential community and, although this is a vacation destination, it's home to many people. As such we ask that you respect their privacy and their right to a peaceful existence. Specifically, between the hours of 10pm and 7am noise should be kept to a minimum. 🤫</p>` },
+      { t: "Breakages", d: `<p>We understand that sometimes accidents happen! Should you break anything please let us know immediately - if it's minor we usually won't charge. If it's a larger issue (e.g. the TV screen) we would like to agree on the cost to replace with you before you leave to avoid any issues later. Thank you, we appreciate your cooperation. 🙏🏽</p>` },
+      { t: "Smoking Policy", d: `<p><strong>This is a smoke-free property</strong>, unless you are on the outside surrounding property and not near open windows. No smoking of any substance, including vaping, is permitted inside the home. 🚭</p>` },
+      { t: "Pets", d: `<p>We love animals. ❤️🐶</p><p>We chose to allow well-behaved woof woofs to our cabin, but we ask that you please control your furry friends while visiting. Any messes made, please clean up. 💩🗑 Pick up after your pet. Keep the animal kenneled please if you leave them alone. And please adhere to the same quiet rules as humans to allow other guests and full time residents in the area the opportunity for peace and quiet. </p>` },
+      { t: "Lions, Tigers, & Bears, OH MY!", d: `<p>Seriously, the Smoky Mountains are home to primarily Black Bears, but other bears too. It's NOT uncommon to see a bear in the neighborhood. PLEASE do not feed them, nor approach or harass them in any way. Steer clear for your safety and theirs! </p><p>We have a Bear Bin with trash cans inside on the property to put waste, please keep ALL trash inside to keep bears from considering wandering onto the property. 🚫🐻🗑</p>` },
+      { t: "What to do in an Emergency", d: `<p>For emergency services (ambulance, police, fire) please immediately call <strong>911</strong>. ☎️</p><p>Do not delay if you feel an emergency situation has arisen. State your location as the address at the top of this guide. <br/><br/><strong>In case of a fire 🔥</strong></p><ul><li>Exit the property as quickly as possible</li><li>Ensure that all persons are accounted for</li><li>Dial 911 and ask for ‘FIRE’ 👩🏼‍🚒</li><li>State your location (see the top of this guide)</li></ul><p>Do not attempt to re-enter the property until a Fire Officer states that it is safe to do so.</p>` },
+      { t: "Emergency phone numbers", d: `<p>For emergency services please immediately call <strong>911</strong>. Do not delay if you feel an emergency situation has arisen.</p><p>If another emergency that doesn't threaten human life occurs, but threatens property damage (like water pipes broken, locks broker, etc), please contact Alison and Jason through the VRBO or Airbnb app you booked through. </p><p>If we do not respond within minutes, please call our contractor and handyman Troy Binger at 865-722-1037, <strong><em><u>ONLY during absolute emergencies</u></em></strong> and <strong><em>only if</em><em> </em></strong>we do not respond to you quickly and you are concerned about property damage. </p>` }
+    ]},
+    { title: "📶 WiFi / Internet Details", topics: [
+      { t: "WiFi / Internet Details", d: `<p>There is free Wi-Fi for your use. The details are: <br/><br/>ID: <strong>WanderOver.com</strong></p><p>Password: <strong>MyVacation@</strong></p><p>The service is provided for your enjoyment, but you are responsible for safe and appropriate use and complying with all laws. If there is any loss of service, please contact us.</p>` }
+    ]},
+    { title: "👋 So Long, Farewell!", topics: [
+      { t: "Thank You For Staying With Us", d: `<p><strong>Thank you for staying with us, and we hope you enjoyed your stay. 😇</strong> If there were any issues with your stay, please don't hesitate to tell us, as we want to ensure we can resolve them for the next guest. <br/><br/><strong>We love online reviews!</strong> <br/><br/>VRBO and Airbnb auto sends you a review request. All you need to do is click the "leave a review" button, give us a star rating, and write a sentence or two about what you liked the best during your stay. <br/><br/>Was it the comfy bed? The information and recommendations? Or maybe it was Keurig machine in the kitchen? ⭐️⭐️⭐️⭐️⭐️<br/><br/>If you are unable to leave us 5 stars, please don't hesitate to contact us first to let us know why - you are key to helping our next guests to have a wonderful time. <br/><br/><strong>With sincere gratitude,</strong> <br/>❤️ Alison &amp; Jason </p>` },
+      { t: "Check-out Time", d: `<p>Check-out time is strictly 🔟AM. Should you require a later check-out we will do our best but you need to let us know beforehand. If we have guests arriving same day <em>(which is typical)</em> it will be almost impossible to offer a late check-out due to the cleaners needing to prepare for those guests. <em>We appreciate your understanding this in advance</em>. </p>` },
+      { t: "Check-out Process", d: `<p>Before your departure, we would appreciate if you would take care of the following:</p><ul><li>Leave the beds unmade. No need to strip them.</li><li>Place used towels in the shower.</li><li>Load the dishwasher and start it.</li><li>Empty all the trash and place in bear bin outside.</li><li>Move all furniture and items back to original locations.</li><li>Set thermostat to 75F / 24C.</li><li>Check all doors and windows to be sure that they are locked.</li></ul><p>We hope you had a wonderful stay and wish you safe travels back home!</p>` }
+    ]}
+  ],
+
+  // Local guide: [name, category, lat, lng, optional note]
+  places: [
+    ["JT Hannah's Kitchen", "Bars", 35.79207, -83.56048],
+    ["Junction 35 Distillery", "Bars", 35.80607, -83.56998],
+    ["Old Forge Distillery", "Bars", 35.78859, -83.55348],
+    ["Smoky Mountain Brewery", "Bars", 35.80602, -83.579],
+    ["The Casual Pint Pigeon Forge", "Bars", 35.79784, -83.56509],
+    ["Fox Den", "Bars", 35.7952, -83.56073],
+    ["Yee-Haw Brewing Co.", "Bars", 35.80358, -83.57107],
+    ["Arcade City", "Activities", 35.80385, -83.57226],
+    ["Big Creek Expeditions", "Activities", 35.81158, -83.14423],
+    ["Big Rock Dude Ranch at Ponderosa LLC", "Activities", 35.763, -83.56947],
+    ["Dolly Parton's Stampede", "Activities", 35.77983, -83.54652],
+    ["Flyaway Indoor Skydiving", "Activities", 35.79403, -83.56286],
+    ["Big Top Arcade", "Activities", 35.79026, -83.55697],
+    ["Goats on the Roof of the Smoky Mountains", "Activities", 35.78938, -83.61219],
+    ["Impossibilities-Magic, Mindreading and Mayhem!", "Activities", 35.71069, -83.51839],
+    ["Island Mirror Maze", "Activities", 35.8043, -83.57222],
+    ["LazerPort Fun Center", "Activities", 35.8004, -83.57191],
+    ["Legacy Mountain Ziplines", "Activities", 35.8078, -83.46616],
+    ["Parrot Mountain and Gardens", "Activities", 35.81173, -83.51878],
+    ["Pigeon Forge Gem Mine", "Activities", 35.79875, -83.56759],
+    ["Professor Hacker’s Lost Treasure Golf", "Activities", 35.7949, -83.5647],
+    ["Rafting In the Smokies", "Activities", 35.72319, -83.49634],
+    ["Rockin' Raceway", "Activities", 35.79935, -83.56849],
+    ["SpeedZone Fun Park", "Activities", 35.78952, -83.55573],
+    ["The Island in Pigeon Forge", "Activities", 35.80273, -83.57043],
+    ["The Track - Pigeon Forge", "Activities", 35.80586, -83.57573],
+    ["Toy Box Mini Golf", "Activities", 35.78227, -83.54807],
+    ["Food City", "Groceries", 35.72665, -83.48069],
+    ["Old Mountain Market", "Groceries", 35.78921, -83.54052],
+    ["Publix Super Market at Valley Forge Shopping Center", "Groceries", 35.8026, -83.5764],
+    ["Rivera's Market", "Groceries", 35.79414, -83.54415],
+    ["Whaley's Country Store", "Groceries", 35.78706, -83.62769],
+    ["Alamo Steakhouse", "Restaurants", 35.79403, -83.56423],
+    ["Big Daddy's Pizzeria", "Restaurants", 35.79574, -83.56269],
+    ["Buzzed Bull Creamery - Pigeon Forge, TN", "Restaurants", 35.79195, -83.55844],
+    ["Espresso Yourself", "Restaurants", 35.7896, -83.5542],
+    ["Farmhouse Sweets", "Restaurants", 35.79186, -83.56015],
+    ["Frizzle Chicken Farmhouse Cafe", "Restaurants", 35.8011, -83.57072],
+    ["Funnel cake factory", "Restaurants", 35.78842, -83.55534],
+    ["Gaucho Urbano - Brazilian Steakhouse", "Restaurants", 35.78894, -83.55833],
+    ["Honeybee Coffee Co.", "Restaurants", 35.86859, -83.56513],
+    ["Huck Finn's Catfish", "Restaurants", 35.78851, -83.55708],
+    ["JT Hannah's Kitchen", "Restaurants", 35.79207, -83.56048],
+    ["Junction 35 Spirits", "Restaurants", 35.80664, -83.57043],
+    ["Lil Black Bear Cafe", "Restaurants", 35.78908, -83.54962],
+    ["MAD DOG'S CREAMERY", "Restaurants", 35.79472, -83.56359],
+    ["Mama's Farmhouse", "Restaurants", 35.79459, -83.56622],
+    ["Old Mill Creamery", "Restaurants", 35.78906, -83.55345],
+    ["Paula Deen's Family Kitchen", "Restaurants", 35.80279, -83.57122],
+    ["Preachers Smokehouse", "Restaurants", 35.81005, -83.45919],
+    ["Sawyer's Farmhouse Breakfast", "Restaurants", 35.79968, -83.56896],
+    ["Smoky Mountain Espresso", "Restaurants", 35.8421, -83.54302],
+    ["Smoky Mountain Popcorn Company", "Restaurants", 35.80662, -83.57846],
+    ["sweetFrog Premium Frozen Yogurt", "Restaurants", 35.80148, -83.57355],
+    ["The Old Mill Restaurant", "Restaurants", 35.78824, -83.55365]
+  ]
+};
+/* ======================== END OF PROPERTY DATA ======================== */
+</script>
+<script src="../assets/guide.js"></script>
+</body>
+</html>
