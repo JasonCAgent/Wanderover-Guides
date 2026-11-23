@@ -11,7 +11,7 @@ $("#wifiName").textContent = GUIDE.wifi.name;
 $("#wifiPass").textContent = GUIDE.wifi.password;
 $("#dirBtn").href = "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(GUIDE.address);
 $("#textBtn").href = "sms:" + GUIDE.phone;
-$("#callBtn").href = "tel:" + GUIDE.phone;
+$("#callBtn").href = "tel:" + (GUIDE.callPhone || GUIDE.phone);
 $("#printBtn").onclick = () => { document.querySelectorAll("details").forEach(d=>d.open=true); window.print(); };
 
 // Info sections
