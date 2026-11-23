@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Guest Guide</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0a0b0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/guide.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="top"><span>Guest Welcome Book</span><span><button id="printBtn" title="Save as PDF or print">🖨 Print</button></span></div>
+    <h1 id="propName"></h1>
+    <div class="addr" id="propAddr"></div>
+    <div class="moments" id="moments"></div>
+    <p class="tagline" id="tagline"></p>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- HOME -->
+  <section class="view on" id="view-home">
+    <div class="card">
+      <div class="grid2">
+        <div><div class="k">Check-in</div><div class="v" id="ciTime"></div></div>
+        <div><div class="k">Check-out</div><div class="v" id="coTime"></div></div>
+        <div><div class="k">WiFi network</div><div class="v" id="wifiName"></div></div>
+        <div><div class="k">WiFi password</div><div class="v" id="wifiPass"></div></div>
+      </div>
+      <div class="btnrow">
+        <a class="btn" id="dirBtn" target="_blank" rel="noopener">Get directions</a>
+        <a class="btn ghost" id="textBtn">Text your hosts</a>
+        <a class="btn ghost" id="callBtn">Call</a>
+      </div>
+    </div>
+    <div class="card">
+      <div class="k">Weather in Lakeside</div>
+      <div class="weather" id="weather"><div>Loading…</div></div>
+    </div>
+    <div class="card quick">
+      <div class="k" style="margin-bottom:4px">Useful right now</div>
+      <div id="quick"></div>
+    </div>
+  </section>
+
+  <!-- INFO -->
+  <section class="view" id="view-info">
+    <input type="search" id="search" placeholder="Search for anything… (wifi, grill, pets)">
+    <div id="info"></div>
+  </section>
+
+  <!-- MAP -->
+  <section class="view" id="view-map">
+    <div id="map"></div>
+    <div class="filters" id="filters"></div>
+    <ul class="places" id="places"></ul>
+  </section>
+</main>
+
+<nav class="tabs">
+  <button data-view="home" class="on">🏠 Home</button>
+  <button data-view="info">📖 Info</button>
+  <button data-view="map">📍 Local guide</button>
+</nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* =====================================================================
+   PROPERTY DATA — fill this in for a new property. Copy this whole
+   _template folder, rename it (e.g. "pine-cabin"), and edit below.
+   ===================================================================== */
+const GUIDE = {
+  name: "Property Name",
+  address: "Street, City, State ZIP",
+  lat: 34.14, lng: -109.97,          // right-click the house in Google Maps to copy these
+  hosts: "Alison & Jason",
+  checkIn: "4:00 PM", checkOut: "10:00 AM",
+  wifi: { name: "NETWORK", password: "PASSWORD" },
+  phone: "4807803512", phoneLabel: "(480) 780-3512",
+  moments: {
+    "Pre-arrival":      { tagline: "Let's get you ready!", topics: ["Welcome","Check-in Time"] },
+    "Check-in":         { tagline: "Welcome! Here's how to get settled.", topics: ["Check-in Time","WiFi / Internet Details"] },
+    "During your stay": { tagline: "Make the most of your stay.", topics: ["WiFi / Internet Details"] },
+    "Check-out":        { tagline: "Everything for an easy check-out.", topics: ["Check-out Time"] }
+  },
+  sections: [
+    { title: "👋 Welcome", topics: [ { t: "Welcome", d: `<p>Write your welcome here.</p>` } ]},
+    { title: "🔑 Arrival Information", topics: [ { t: "Check-in Time", d: `<p>Check-in is 4 PM.</p>` } ]},
+    { title: "📶 WiFi / Internet Details", topics: [ { t: "WiFi / Internet Details", d: `<p>Network: <strong>NETWORK</strong><br>Password: <strong>PASSWORD</strong></p>` } ]},
+    { title: "👋 So Long, Farewell!", topics: [ { t: "Check-out Time", d: `<p>Check-out is 10 AM.</p>` } ]}
+  ],
+  // Local guide: [name, category, lat, lng, optional note]
+  places: [
+    ["Example Cafe","Restaurants",34.15,-109.97,"Great breakfast"]
+  ]
+};
+/* ======================== END OF PROPERTY DATA ======================== */
+</script>
+<script src="../assets/guide.js"></script>
+</body>
+</html>

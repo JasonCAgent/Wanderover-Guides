@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Back Inn Black</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0a0b0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/guide.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="top"><span>Guest Welcome Book</span><span><button id="printBtn" title="Save as PDF or print">🖨 Print</button></span></div>
+    <h1 id="propName"></h1>
+    <div class="addr" id="propAddr"></div>
+    <div class="moments" id="moments"></div>
+    <p class="tagline" id="tagline"></p>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- HOME -->
+  <section class="view on" id="view-home">
+    <div class="card">
+      <div class="grid2">
+        <div><div class="k">Check-in</div><div class="v" id="ciTime"></div></div>
+        <div><div class="k">Check-out</div><div class="v" id="coTime"></div></div>
+        <div><div class="k">WiFi network</div><div class="v" id="wifiName"></div></div>
+        <div><div class="k">WiFi password</div><div class="v" id="wifiPass"></div></div>
+      </div>
+      <div class="btnrow">
+        <a class="btn" id="dirBtn" target="_blank" rel="noopener">Get directions</a>
+        <a class="btn ghost" id="textBtn">Text your hosts</a>
+        <a class="btn ghost" id="callBtn">Call</a>
+      </div>
+    </div>
+    <div class="card">
+      <div class="k">Weather in Lakeside</div>
+      <div class="weather" id="weather"><div>Loading…</div></div>
+    </div>
+    <div class="card quick">
+      <div class="k" style="margin-bottom:4px">Useful right now</div>
+      <div id="quick"></div>
+    </div>
+  </section>
+
+  <!-- INFO -->
+  <section class="view" id="view-info">
+    <input type="search" id="search" placeholder="Search for anything… (wifi, grill, pets)">
+    <div id="info"></div>
+  </section>
+
+  <!-- MAP -->
+  <section class="view" id="view-map">
+    <div id="map"></div>
+    <div class="filters" id="filters"></div>
+    <ul class="places" id="places"></ul>
+  </section>
+</main>
+
+<nav class="tabs">
+  <button data-view="home" class="on">🏠 Home</button>
+  <button data-view="info">📖 Info</button>
+  <button data-view="map">📍 Local guide</button>
+</nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* =====================================================================
+   PROPERTY DATA — this block is the only part that changes per property.
+   To make a guide for another property: copy this file, edit this block.
+   ===================================================================== */
+const GUIDE = {
+  name: "Back Inn Black",
+  address: "1672 Homestead Road, Lakeside, Arizona 85929",
+  lat: 34.14044, lng: -109.97288,
+  hosts: "Alison & Jason",
+  checkIn: "4:00 PM", checkOut: "10:00 AM",
+  wifi: { name: "Homestead-Guest-5G", password: "BackInnBlack" },
+  phone: "4807803512", phoneLabel: "(480) 780-3512",  // monitored by Alison, Jason and our assistant
+
+  // Guest-journey "moments": which sections to surface before, during and after a stay
+  moments: {
+    "Pre-arrival":      { tagline: "Let's get you ready for Lakeside!", topics: ["Welcome","Add This Guide To Your Phone","Driving Directions","Things To Bring","Contacting Us"] },
+    "Check-in":         { tagline: "Welcome! Here's how to get settled.", topics: ["Access Codes / Instructions","Check-in Time","WiFi / Internet Details","Heating & Cooling","Quiet Times","What to do in an Emergency"] },
+    "During your stay": { tagline: "Make the most of your stay.", topics: ["WiFi / Internet Details","Air Hockey","Infinity Board","Television","Grill","Cafe Lights on patio"] },
+    "Check-out":        { tagline: "Everything for an easy check-out.", topics: ["Check-out Time","Thank You For Staying With Us"] }
+  },
+
+  sections: [
+    { title: "👋 Welcome", topics: [
+      { t: "Welcome", d: `<p><strong>Welcome: Your Inside Track</strong></p><p>This is your time. And your time is precious. That's why we've created this guidebook. You'll find everything you need to know about staying with us, from check-in time to the WiFi code, great coffee to the best local restaurants. It's all here.</p><p><strong>Do I really need this info?</strong> Honest answer? 100% YES! Think of it like having us "virtually" by your side, showing you:</p><ul><li>How to find us 📍</li><li>The WiFi code 📶</li><li>Check-in instructions 🔑</li><li>Discovering wonderful local places 🎢</li><li>Excellent restaurants 🍽</li><li>How to find eternal happiness 🥰</li></ul><p>Well maybe not that last one, but hopefully you will leave us relaxed, content, and rejuvenated!</p><p>If you'd like a PDF of this guide, tap <strong>🖨 Print</strong> at the top and choose "Save as PDF".</p><p><strong>What next?</strong> Please relax, unwind, have fun, and enjoy your stay!</p>` }
+    ]},
+    { title: "🧳 Before You Leave Home", topics: [
+      { t: "Add This Guide To Your Phone", d: `<p>Add this guide to your home screen so it opens like an app 📲, no download or sign-in needed.</p><ul><li><strong>iPhone:</strong> open this link in Safari, tap the Share button, then "Add to Home Screen".</li><li><strong>Android:</strong> open in Chrome, tap the ⋮ menu, then "Add to Home screen".</li></ul><p><strong>Share your guide with your group.</strong> Send this link to everyone travelling with you so everyone has the info (less hassle for the trip organizer!).</p>` },
+      { t: "Driving Directions", d: `<p>Tap <strong>Get directions</strong> on the Home tab. It opens Google Maps with the house already filled in as your destination. 📍</p>` },
+      { t: "Things To Bring", d: `<p>Here's a basic list of what you might want to bring, knowing what we do about the amenities in this home:</p><ul><li>Personal toiletries 🪥</li><li>Camera, memory cards, charger 📸</li><li>Personal electronics chargers 🔌</li><li>Flashlights, batteries 🔦🔋</li><li>Hiking gear 🥾</li><li>Sunscreen, and depending on the time of year, perhaps an umbrella ☂️</li></ul>` }
+    ]},
+    { title: "🔑 Arrival Information", topics: [
+      { t: "Access Codes / Instructions", d: `<p>We will provide you with an access key code 24 hours prior to arrival. This will allow you to check yourself in to the property. Please ensure you have the code before you travel. If not, please contact us. There's nothing worse than arriving somewhere new (potentially at night) and not being able to get in!</p>` },
+      { t: "Check-in Time", d: `<p>Check-in time is <strong>4 PM</strong>. If you are arriving early, have a look at the Local guide tab. We've listed lots of things to do around the area. It's time for you to kick back and start relaxing!</p>` },
+      { t: "Contacting Us", d: `<p>If you booked on <a href="https://www.airbnb.com" target="_blank" rel="noopener">Airbnb</a> or <a href="https://www.vrbo.com" target="_blank" rel="noopener">VRBO</a>, we prefer all communication goes through their app. If you booked directly with us, please phone, text or email:</p><ul><li><a href="sms:4807803512">Text us at (480) 780-3512</a> 💬 (fastest: Alison, Jason and our assistant all see it)</li><li><a href="tel:4807803512">Call (480) 780-3512</a> ☎️</li><li><a href="mailto:CactusCabinsLLC@gmail.com">Email Alison & Jason</a> 📧</li></ul>` }
+    ]},
+    { title: "🏡 About the Accommodation", topics: [
+      { t: "Heating & Cooling", d: `<p>You will find a panel on the living room wall that controls the temperature of the home. If you're running the air conditioning, please keep all windows and outside doors closed. We recommend 72°F / 22°C. If you adjust, <strong>please only change it a maximum of 3 degrees at a time</strong> so as not to damage the equipment.</p>` },
+      { t: "Game Room Heating & Cooling", d: `<p>There is a mini-split heating and air conditioning unit on the wall in the game room, with a remote mounted to its left. Please use this remote to operate it, don't remove it from the room, and return it to the holster on the wall.</p>` },
+      { t: "Kitchen Equipment", d: `<p><strong>Dishwasher:</strong> we provide tablets. Insert one into the flip box on the inside of the door, choose a program, then press start.</p><p><strong>Fridge/freezer:</strong> you should not need to adjust any settings. If it's not cooling well, please let us know.</p><p><strong>Oven/range:</strong> this is a gas range, so please be sure to turn it off completely and watch children around the knobs and flames.</p>` },
+      { t: "Laundry Appliances", d: `<p>The washer and dryer are in the utility room next to the side entry, with detergent supplied. Select a program, add detergent to the tray, close the door, and hit start.</p>` },
+      { t: "Air Hockey", d: `<p>A classic professional air hockey table is in the game room. The switch to turn it on is on the wall to the right as you enter, directly behind where a player would stand.</p>` },
+      { t: "Infinity Board", d: `<p>The game room has an Infinity Board preloaded with dozens of games like Clue, Candyland, Scrabble, Connect Four, Life, Solitaire and Guess Who. The small round silver power button is on the side, underneath the glass table.</p>` },
+      { t: "Television", d: `<p>Each bedroom and the living room has a TV with its own remote. There's no cable; use the streaming apps (Netflix, Hulu, etc.) and sign in to your own accounts. Remember to sign out before you leave.</p>` },
+      { t: "Cafe Lights on patio", d: `<p>String lights under the patio run off an outdoor Wi-Fi plug with two buttons. Press the <strong>left</strong> button to turn them on and off.</p>` },
+      { t: "Grill", d: `<p>The outdoor grill runs on natural gas, so it always has fuel. Please don't operate it near the home or under the porch, and leave it clean to avoid extra cleaning fees.</p>` }
+    ]},
+    { title: "📋 Safety Info & Rules", topics: [
+      { t: "Quiet Times", d: `<p>We're in a residential community that's home to many people. Between <strong>10 PM and 7 AM</strong> please keep noise to a minimum. 🤫</p>` },
+      { t: "Breakages", d: `<p>Accidents happen! If you break anything, please let us know right away. If it's minor we usually won't charge. For larger items (e.g. a TV screen) we'd like to agree the replacement cost with you before you leave. 🙏🏽</p>` },
+      { t: "Smoking Policy", d: `<p>This is a smoke-free property. No smoking of any substance, including vaping, inside the home. Outside is fine if you're away from open windows. 🚭</p>` },
+      { t: "Pets", d: `<p>We love animals ❤️🐶 and welcome well-behaved dogs. Please keep them under control, pick up after them 💩🗑, kennel them if you leave them alone, and follow the same quiet hours as humans.</p>` },
+      { t: "What to do in an Emergency", d: `<p>For ambulance, police or fire, call <a href="tel:911"><strong>911</strong></a> immediately and give the address at the top of this guide.</p><p><strong>In case of fire 🔥:</strong></p><ul><li>Exit the property as quickly as possible</li><li>Make sure everyone is accounted for</li><li>Dial 911 and ask for "FIRE" 👩🏼‍🚒</li><li>State the address at the top of this guide</li></ul><p>Do not re-enter until a fire officer says it is safe.</p>` }
+    ]},
+    { title: "📶 WiFi / Internet Details", topics: [
+      { t: "WiFi / Internet Details", d: `<p>Free Wi-Fi is available:</p><p>Network: <strong>Homestead-Guest-5G</strong><br>Password: <strong>BackInnBlack</strong></p><p>You're responsible for safe and lawful use. If the service drops, please contact us.</p>` }
+    ]},
+    { title: "👋 So Long, Farewell!", topics: [
+      { t: "Check-out Time", d: `<p>Check-out is strictly <strong>10 AM</strong>. If you'd like a later check-out, ask us beforehand and we'll do our best, though with same-day arrivals (which is typical) the cleaners usually need the time.</p>` },
+      { t: "Thank You For Staying With Us", d: `<p>Thank you for staying with us! 😇 If anything wasn't right, please tell us so we can fix it for the next guest.</p><p><strong>We love online reviews!</strong> Airbnb and VRBO will send you a review request. Was it the comfy bed? The recommendations? The Keurig? ⭐️⭐️⭐️⭐️⭐️</p><p>If you can't leave 5 stars, please contact us first so we can make it right.</p><p>With sincere gratitude,<br>❤️ Alison & Jason</p>` }
+    ]}
+  ],
+
+  // Local guide: [name, category, lat, lng, note]
+  places: [
+    ["Black Horse Brewery","Bars",34.28921,-110.15747],
+    ["Buffalo Bill's Tavern & Grill","Bars",34.24916,-110.07053],
+    ["Moose Henris Grille Cork and Taps","Bars",34.16967,-110.00069],
+    ["Munich Haus Grill-N-Beergarden","Bars",34.12622,-109.93199],
+    ["Pinetop Brewing Company","Bars",34.14287,-109.95666],
+    ["The Lion's Den Bar & Grill","Bars",34.12505,-109.92803],
+    ["The Lodge Sports Bar & Grill","Bars",34.12724,-109.94502],
+    ["Bison Golf Club","Activities",34.24908,-110.0706],
+    ["Hon-Dah Casino","Activities",34.07892,-109.90478],
+    ["WME Village 8","Activities",34.14686,-109.97115],
+    ["WME Theatres","Activities",34.23239,-110.02733],
+    ["White Mountain Family Fun Park","Activities",34.17389,-110.00655],
+    ["Porter Mountain Stables","Activities",34.16926,-109.96658],
+    ["Sunrise Park Resort","Activities",33.97373,-109.56423],
+    ["The Hub","Activities",34.18745,-110.01663],
+    ["Eddie's Country Store","Groceries",34.12552,-109.93493],
+    ["Safeway","Groceries",34.14305,-109.95433],
+    ["Fool Hollow Lake","Parks",34.27064,-110.07102],
+    ["Mogollon Rim Trail","Parks",34.17957,-110.0134],
+    ["Pintail Lake","Parks",34.30178,-110.02301],
+    ["Show Low City Park","Parks",34.24506,-110.05781],
+    ["Show Low Lake","Parks",34.19022,-109.99881],
+    ["White Mountain Nature Center","Parks",34.13567,-109.97138],
+    ["Woodland Lake Park","Parks",34.1289,-109.95199],
+    ["Arizona Mountain Coffee Co.","Restaurants",34.25122,-110.02803,"Coffee"],
+    ["By The Bucket","Restaurants",34.14764,-109.96119],
+    ["Cafe Pinoli","Restaurants",34.15318,-109.97302],
+    ["Cattlemen's Steakhouse & Lounge","Restaurants",34.2539,-110.02941],
+    ["Chalet Restaurant & Bar","Restaurants",34.14627,-109.95851],
+    ["Charlie Clark's Steakhouse","Restaurants",34.1257,-109.93571],
+    ["Crockery Cafe and Infusery","Restaurants",34.14714,-109.97099],
+    ["Darbi's Cafe","Restaurants",34.13723,-109.95158],
+    ["Grumpy Jake's BBQ & Catering","Restaurants",34.16823,-109.99817],
+    ["Italian Lady Of Pinetop Cannoli Shack & Kitchen","Restaurants",34.15155,-109.97357],
+    ["Johnny & Dee's Picnic Basket","Restaurants",34.13554,-109.94962],
+    ["Long Wongs","Restaurants",34.15866,-109.97957],
+    ["Mr. Zeke's Restaurant","Restaurants",34.14756,-109.96024],
+    ["Mudslingers Drive Thru Coffee","Restaurants",34.20952,-110.02475,"Coffee"],
+    ["PersNIKKIty's Cafe","Restaurants",34.2559,-110.02419],
+    ["Red Devil Restaurant & Bar","Restaurants",34.12615,-109.9349],
+    ["The Bistro at Annie's","Restaurants",34.16189,-109.98596],
+    ["The House","Restaurants",34.2515,-110.02959,"Owned by a dear friend of ours, who also owns Red Barn Creamery & Matty's Beef & Beer."],
+    ["The Hungry Buffalo Bar and Grill","Restaurants",34.17712,-109.97243],
+    ["What's Cooking Kitchen and Bakery","Restaurants",34.20222,-110.02046]
+  ]
+};
+/* ======================== END OF PROPERTY DATA ======================== */
+</script>
+<script src="../assets/guide.js"></script>
+</body>
+</html>
